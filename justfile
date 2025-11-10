@@ -24,11 +24,17 @@ bundle-run-silver target="dev":
 bundle-run-gold target="dev":
     just bundle-run gold_pipeline {{target}}
 
-bundle-run-train target="dev":
-    just bundle-run train_opportunity_model {{target}}
+bundle-run-medallion target="dev":
+    just bundle-run medallion_orchestrator {{target}}
 
-bundle-run-batch target="dev":
-    just bundle-run batch_scoring_job {{target}}
+uv-install:
+    uv pip install --system -r requirements-dev.txt
+
+dashboard-provision:
+    DATABRICKS_HOST=${DATABRICKS_HOST:?must-export} DATABRICKS_TOKEN=${DATABRICKS_TOKEN:?must-export} uv run --with requests python scripts/create_dashboard.py
+
+genie-configure:
+    DATABRICKS_HOST=${DATABRICKS_HOST:?must-export} DATABRICKS_TOKEN=${DATABRICKS_TOKEN:?must-export} uv run --with requests python scripts/configure_genie.py
 
 terraform-init:
     cd terraform && terraform init

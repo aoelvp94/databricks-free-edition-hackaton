@@ -93,43 +93,74 @@ feature_cols = [
     "distance_km",
 ]
 
-combo_df = spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_combo_offer").where(F.col("opportunity_index_baseline") >= MIN_INDEX)
-flight_df = spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_flight_quote").select(
-    "quote_id",
-    "total_price_usd",
-    "yield_per_km",
-    "availability_ratio",
-    "promotion_flag",
-    "distance_km",
-    "travel_date",
-    "route_id",
+combo_df = (
+    spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_combo_offer")
+    .where(F.col("opportunity_index_baseline") >= MIN_INDEX)
+    .alias("c")
 )
-hotel_df = spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_hotel_quote").select(
-    F.col("quote_id").alias("hotel_quote_id"),
-    "avg_price_per_night",
-    "stay_length_nights",
-    F.col("availability_ratio").alias("hotel_availability_ratio"),
-    F.col("promotion_flag").alias("hotel_promotion_flag"),
+flight_df = (
+    spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_flight_quote")
+    .select(
+        "quote_id",
+        "total_price_usd",
+        "yield_per_km",
+        "availability_ratio",
+        "promotion_flag",
+        F.col("departure_date").alias("travel_date"),
+        "route_id",
+    )
+    .alias("f")
+)
+hotel_df = (
+    spark.table(f"{CATALOG}.{SILVER_SCHEMA}.fact_hotel_quote")
+    .select(
+        F.col("quote_id").alias("hotel_quote_id"),
+        "avg_price_per_night",
+        "stay_length_nights",
+        F.col("availability_ratio").alias("hotel_availability_ratio"),
+        F.col("promotion_flag").alias("hotel_promotion_flag"),
+    )
+    .alias("h")
+)
+route_df = (
+    spark.table(f"{CATALOG}.{SILVER_SCHEMA}.dim_route")
+    .select("route_id", "distance_km")
+    .dropDuplicates(["route_id"])
+    .alias("r")
+)
+
+joined = (
+    combo_df.join(flight_df, F.col("c.flight_quote_id") == F.col("f.quote_id"), "left")
+    .join(hotel_df, F.col("c.hotel_quote_id") == F.col("h.hotel_quote_id"), "left")
+    .join(route_df, "route_id", "left")
 )
 
 dataset = (
-    combo_df.alias("c")
-    .join(flight_df.alias("f"), "quote_id", "left")
-    .join(hotel_df.alias("h"), "hotel_quote_id", "left")
-    .filter((F.col("travel_date") >= F.lit(today)) & (F.col("travel_date") <= F.lit(horizon_date)))
+    joined.filter((F.col("travel_date") >= F.lit(today)) & (F.col("travel_date") <= F.lit(horizon_date)))
     .withColumn(
         "stay_vs_flight_ratio",
-        F.col("bundle_price_usd") / (F.col("total_price_usd") + F.col("avg_price_per_night") * F.col("stay_length_nights")),
+        F.col("bundle_price_usd")
+        / F.when(
+            (F.col("total_price_usd") + F.col("avg_price_per_night") * F.col("stay_length_nights")) <= 0,
+            F.lit(1.0),
+        ).otherwise(
+            F.col("total_price_usd") + F.col("avg_price_per_night") * F.col("stay_length_nights")
+        ),
     )
     .withColumn("event_uplift_filled", F.coalesce("event_uplift", F.lit(0.05)))
+    .withColumn("promotion_flag", F.coalesce(F.col("promotion_flag"), F.lit(0)).cast("int"))
+    .withColumn("hotel_promotion_flag", F.coalesce(F.col("hotel_promotion_flag"), F.lit(0)).cast("int"))
     .fillna(
         {
+            "total_price_usd": 200.0,
             "stay_vs_flight_ratio": 1.0,
             "avg_price_per_night": 120.0,
             "distance_km": 1500,
             "hotel_availability_ratio": 0.6,
             "hotel_promotion_flag": 0,
             "promotion_flag": 0,
+            "availability_ratio": 0.6,
+            "stay_length_nights": 3,
         }
     )
 )

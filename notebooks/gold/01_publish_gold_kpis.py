@@ -20,7 +20,7 @@ from pyspark.sql import functions as F
 
 # COMMAND ----------
 
-TARGET_CATALOG = "workspace"
+TARGET_CATALOG = spark.conf.get("pipeline.defaultCatalog", "workspace")
 SILVER_SCHEMA = spark.conf.get("source.silver_schema", "silver_travel")
 
 

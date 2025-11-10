@@ -10,6 +10,8 @@ on:
 jobs:
   bundle:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}

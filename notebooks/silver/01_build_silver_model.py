@@ -27,7 +27,7 @@ from pyspark.sql import types as T
 
 spark.conf.set("spark.sql.shuffle.partitions", "4")
 
-TARGET_CATALOG = "workspace"
+TARGET_CATALOG = spark.conf.get("pipeline.defaultCatalog", "workspace")
 BRONZE_SCHEMA = spark.conf.get("source.bronze_schema", "bronze_travel")
 
 

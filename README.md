@@ -25,17 +25,23 @@ Hackathon project showcasing how to use Databricks Free Edition to build a medal
 ### Prerequisites
 
 1. Databricks Free Edition workspace (serverless).
-2. Install [Databricks CLI v0.215+](https://docs.databricks.com/en/dev-tools/cli/index.html) and authenticate:
+2. Create a local `.env` file (keep it out of version control) with:
+   ```bash
+   DATABRICKS_HOST="https://<your-workspace>.databricks.com"
+   BUNDLE_VAR_workspace_root_path="/Users/<user>/travel-hacking-latam"
+   ```
+   Load it before running bundle commands: `source .env`.
+3. Install [Databricks CLI v0.215+](https://docs.databricks.com/en/dev-tools/cli/index.html) and authenticate:
    ```bash
    databricks configure --host "$DATABRICKS_HOST" --token "$DATABRICKS_TOKEN"
    ```
-3. Enable bundles experimental mode if required:
+4. Enable bundles experimental mode if required:
    ```bash
    databricks bundle enable
    ```
-4. (Optional) Install [`just`](https://github.com/casey/just) for task automation.
-5. (Optional) Install Terraform ≥ 1.6 to demonstrate IaC alongside Bundles.
-6. Capture the ID of the reusable serverless cluster (SQL warehouse or all-purpose) and pass it as `var.serverless_cluster_id` when deploying the bundle.
+5. (Optional) Install [`just`](https://github.com/casey/just) for task automation.
+6. (Optional) Install Terraform ≥ 1.6 to demonstrate IaC alongside Bundles.
+7. Capture the ID of the reusable serverless cluster (SQL warehouse or all-purpose) and pass it as `var.serverless_cluster_id` when deploying the bundle.
 
 ### Recommended flow
 
@@ -47,6 +53,13 @@ Hackathon project showcasing how to use Databricks Free Edition to build a medal
 5. Create the agent and the dashboard (CLI, scripts, or UI).
 6. Record the demo highlighting problem statement, architecture, and outcomes.
 7. (Optional) Build the Docker image (`docker build -t travel-hacking .`) and run scripts with consistent tooling (CLI + uv-managed deps).
+
+### MLflow usage
+
+- Training runs log to the experiment at `/Shared/travel_hacking/experiments/opportunity_scorer`; open MLflow Experiments in the workspace UI to review metrics (`roc_auc`, `avg_precision`) and artifacts.
+- The registered model `travel_hacking_opportunity_scorer` captures each version; promote the best run to `Staging` before batch scoring.
+- Batch scoring writes predictions to `workspace.gold_travel.gold_predictions`, including `model_version`, `scored_at`, and uplift metrics for auditing.
+- Capture run insights (metrics screenshots, confusion matrices, model summary) for the final presentation deck or demo.
 
 ### Metadata & Genie
 

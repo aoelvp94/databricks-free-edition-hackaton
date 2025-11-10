@@ -20,13 +20,11 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y curl ca-certificates unzip
+          apt-get install -y curl ca-certificates
 
       - name: Install Databricks CLI
         run: |
-          curl -fsSL https://github.com/databricks/cli/releases/latest/download/databricks_cli_linux_amd64.zip -o /tmp/databricks_cli.zip
-          unzip -p /tmp/databricks_cli.zip databricks > /usr/local/bin/databricks
-          chmod +x /usr/local/bin/databricks
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
       - name: Validate bundle
         run: databricks bundle validate --target dev

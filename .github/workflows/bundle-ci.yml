@@ -17,15 +17,16 @@ jobs:
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install curl
+      - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y curl ca-certificates
+          apt-get install -y curl ca-certificates unzip
 
       - name: Install Databricks CLI
         run: |
-          curl -fsSL https://raw.githubusercontent.com/databricks/cli/main/install.sh | bash
-          echo "${HOME}/.databricks/bin" >> $GITHUB_PATH
+          curl -fsSL https://github.com/databricks/cli/releases/latest/download/databricks_cli_linux_amd64.zip -o /tmp/databricks_cli.zip
+          unzip -p /tmp/databricks_cli.zip databricks > /usr/local/bin/databricks
+          chmod +x /usr/local/bin/databricks
 
       - name: Validate bundle
         run: databricks bundle validate --target dev

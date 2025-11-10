@@ -2,6 +2,7 @@ bundle:
   name: travel-hacking-latam
 
 workspace:
+  host: https://dbc-6d4ea419-ca24.cloud.databricks.com
   root_path: ${var.workspace_root_path}
 
 variables:
@@ -97,6 +98,7 @@ targets:
   dev:
     default: true
     workspace:
+      host: https://dbc-6d4ea419-ca24.cloud.databricks.com
       root_path: ${var.workspace_root_path}/dev
 
 

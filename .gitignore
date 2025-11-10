@@ -1,0 +1,25 @@
+# Databricks / Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Databricks bundle / CLI artifacts
+.databricks/
+.bundle/
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl
+
+# Environment variables
+.env
+.env.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+

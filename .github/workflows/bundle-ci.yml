@@ -1,0 +1,33 @@
+name: Databricks Bundle CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/cli/main/install.sh | bash
+          echo "${HOME}/.databricks/bin" >> $GITHUB_PATH
+
+      - name: Validate bundle
+        run: databricks bundle validate --target dev
+
+      - name: Deploy bundle
+        if: github.event_name != 'pull_request'
+        run: databricks bundle deploy --target dev
+
+      - name: Run medallion job
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: databricks bundle run medallion_orchestrator --target dev

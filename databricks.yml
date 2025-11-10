@@ -1,0 +1,106 @@
+bundle:
+  name: travel-hacking-latam
+
+workspace:
+  host: ${env.DATABRICKS_HOST}
+  root_path: ${var.workspace_root_path}
+
+variables:
+  spark_version:
+    default: 14.3.x-cpu-ml-scala2.12
+  bronze_schema_name:
+    default: bronze_travel
+  silver_schema_name:
+    default: silver_travel
+  gold_schema_name:
+    default: gold_travel
+  catalog_name:
+    default: workspace
+  workspace_root_path:
+    description: Workspace path where bundle resources will be deployed.
+
+resources:
+  pipelines:
+    bronze_pipeline:
+      name: travel-hacking-bronze
+      catalog: ${var.catalog_name}
+      target: ${var.bronze_schema_name}
+      development: true
+      channel: PREVIEW
+      edition: ADVANCED
+      serverless: true
+      photon: false
+      libraries:
+        - notebook:
+            path: notebooks/bronze/01_generate_bronze_data.py
+      configuration:
+        bundle.layer: bronze
+
+    silver_pipeline:
+      name: travel-hacking-silver
+      catalog: ${var.catalog_name}
+      target: ${var.silver_schema_name}
+      development: true
+      channel: PREVIEW
+      edition: ADVANCED
+      serverless: true
+      photon: false
+      libraries:
+        - notebook:
+            path: notebooks/silver/01_build_silver_model.py
+      configuration:
+        bundle.layer: silver
+        source.bronze_schema: ${var.bronze_schema_name}
+        source.catalog_name: ${var.catalog_name}
+
+    gold_pipeline:
+      name: travel-hacking-gold
+      catalog: ${var.catalog_name}
+      target: ${var.gold_schema_name}
+      development: true
+      channel: PREVIEW
+      edition: ADVANCED
+      serverless: true
+      photon: false
+      libraries:
+        - notebook:
+            path: notebooks/gold/01_publish_gold_kpis.py
+      configuration:
+        bundle.layer: gold
+        source.silver_schema: ${var.silver_schema_name}
+        source.catalog_name: ${var.catalog_name}
+
+  jobs:
+    medallion_orchestrator:
+      name: travel-hacking-medallion-run
+      description: Sequentially runs Bronze, Silver, and Gold Lakeflow pipelines.
+      tags:
+        purpose: medallion_orchestration
+      tasks:
+        - task_key: run_bronze
+          description: Trigger Bronze Lakeflow pipeline.
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.bronze_pipeline.id}
+        - task_key: run_silver
+          description: Trigger Silver pipeline after Bronze completes.
+          depends_on:
+            - task_key: run_bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.silver_pipeline.id}
+        - task_key: run_gold
+          description: Trigger Gold pipeline after Silver completes.
+          depends_on:
+            - task_key: run_silver
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.gold_pipeline.id}
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: ${env.DATABRICKS_HOST}
+      root_path: ${var.workspace_root_path}/dev
+    default_catalog: ${var.catalog_name}
+    default_schema: ${var.silver_schema_name}
+
+

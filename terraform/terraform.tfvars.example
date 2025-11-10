@@ -1,0 +1,12 @@
+databricks_host  = "https://<tu-workspace>.databricks.com"
+databricks_token = "dapiXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+repo_path        = "/Repos/<usuario>/databricks-free-edition-hackaton"
+
+# Opcionales
+# catalog_name      = "hackathon"
+# bronze_schema_name = "bronze_travel"
+# silver_schema_name = "silver_travel"
+# gold_schema_name   = "gold_travel"
+# spark_version      = "14.3.x-cpu-ml-scala2.12"
+# synthetic_days     = 35
+

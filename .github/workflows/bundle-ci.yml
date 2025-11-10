@@ -17,6 +17,10 @@ jobs:
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install curl
+        run: |
+          apt-get update
+          apt-get install -y curl ca-certificates
 
       - name: Install Databricks CLI
         run: |
